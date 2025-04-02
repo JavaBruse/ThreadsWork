@@ -50,17 +50,23 @@ public class ThreadQueueMaster implements CustomExecutor {
         }
 
         synchronized (this) {
-            queueIndex = (queueIndex + 1) % queues.size();
-            if (!queues.get(queueIndex).offer(command)) {
-                if (workers.size() < maxPoolSize) {
-                    log.info("Очередь переполнена. Добавляем новый рабочий поток.");
-                    addWorker();
-                    queues.get(queueIndex).offer(command);
-                } else {
-                    log.warn("Очередь переполнена. Задача отклонена!");
+            int startIndex = queueIndex;
+            do {
+                if (queues.get(queueIndex).offer(command)) {
+                    log.info("Задача добавлена в очередь {}", queueIndex);
+                    return;
                 }
+                queueIndex = (queueIndex + 1) % queues.size();
+            } while (queueIndex != startIndex);
+
+            if (workers.size() < maxPoolSize) {
+                log.info("Очереди заполнены. Добавляем новый поток.");
+                addWorker();
+                queues.get(queueIndex).offer(command);
+            } else {
+                log.warn("Очереди заполнены. Задача будет отклонена.");
+                throw new RejectedExecutionException();
             }
-            log.info("Задача добавлена в очередь");
 
         }
     }
@@ -85,7 +91,7 @@ public class ThreadQueueMaster implements CustomExecutor {
         log.info("Исполнитель принудительно завершает работу.");
     }
 
-    private synchronized void addWorker() {
+    private void addWorker() {
         if (workers.size() < maxPoolSize) {
             BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(queueSize);
             queues.add(queue);

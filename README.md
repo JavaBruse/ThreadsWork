@@ -26,7 +26,6 @@ ThreadQueueMaster представляет собой кастомный пул 
 - 1000 задач.
 - у ThreadPoolExecutor добавлен параметр `new ThreadPoolExecutor.AbortPolicy()`, 
 что бы при переполнении очереди новые задачи не принимались.
-- Измерялось общее время выполнения
 
 #### Результаты 1
 | Параметр                       | ThreadQueueMaster | ThreadPoolExecutor |
